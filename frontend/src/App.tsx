@@ -2,6 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 
+type Item = {
+  id: string;
+  name: string;
+  value: number;
+  icon: string;
+};
+
 function App() {
   const [item, setItem] = useState<Item>();
   const [isScanning, setIsScanning] = useState(false);
@@ -11,13 +18,6 @@ function App() {
 
   const fadeTimeoutRef = useRef<number | null>(null);
   const clearTimeoutRef = useRef<number | null>(null);
-
-  type Item = {
-    id: string;
-    name: string;
-    value: number;
-    icon: string;
-  };
 
   useEffect(() => {
     EventsOn("item-found", (data) => {

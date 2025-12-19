@@ -27,10 +27,22 @@ wails dev
 Runs live development mode with hot reload. Frontend dev server available at http://localhost:34115.
 
 ### Building
+
+**For distribution (self-contained):**
+```bash
+./scripts/build-bundled.sh
+```
+Creates a fully self-contained .app with bundled Tesseract. No user setup required - just download and run. Output: `build/bin/arc-scanner.app` (~20MB)
+
+**For quick local testing:**
 ```bash
 wails build
 ```
-Creates a production build. Output binary will be named `arc-scanner`.
+Standard Wails build without bundling. Requires system Tesseract. Faster to build but NOT suitable for distribution. Output: `build/bin/arc-scanner.app` (~10MB)
+
+**What's the difference?**
+- `./scripts/build-bundled.sh` = Bundles Tesseract → Runs `wails build` → Copies resources into .app
+- `wails build` = Just builds the .app (no Tesseract bundling)
 
 ### Frontend Commands
 ```bash
@@ -96,18 +108,44 @@ Screenshot preprocessing is critical for accuracy (see `ocr/scanner.go:44-47`).
 
 ## Dependencies
 
-### External Requirements
+### External Requirements (Development Only)
 
-- **Tesseract OCR** must be installed:
-  - `/opt/homebrew/bin/tesseract` (Homebrew ARM)
-  - `/usr/local/bin/tesseract` (Homebrew Intel)
-  - Or available in PATH
+For development, **Tesseract OCR** must be installed:
+- `/opt/homebrew/bin/tesseract` (Homebrew ARM)
+- `/usr/local/bin/tesseract` (Homebrew Intel)
+- Or available in PATH
 
-Scanner will auto-detect Tesseract location on initialization.
+### Distribution (Self-Contained)
+
+When built with `./scripts/build-bundled.sh`, the app bundles:
+- Tesseract binary (102KB)
+- Required dylibs (libleptonica, libtesseract, libarchive ~5.5MB)
+- Training data (eng.traineddata ~3.9MB)
+- **Total overhead: ~9.5MB**
+
+The bundled app requires NO external dependencies - users just download and run.
+
+Scanner auto-detects Tesseract location in this order:
+1. Bundled version (in .app/Contents/Resources/bin/)
+2. Homebrew installation (for development)
+3. System PATH
 
 ### Wails Bindings
 
 Frontend automatically gets generated bindings in `frontend/wailsjs/` - these are auto-generated and should not be manually edited.
+
+## macOS Permissions (For End Users)
+
+The app requires two permissions on first launch:
+
+1. **Accessibility** - To detect keyboard input (pressing 'y' to scan)
+2. **Screen Recording** - To capture screenshots for OCR
+
+**If scanning doesn't work:**
+- Open System Settings → Privacy & Security
+- Go to Accessibility → Add arc-scanner.app → Enable checkbox
+- Go to Screen Recording → Add arc-scanner.app → Enable checkbox
+- Restart the app
 
 ## Git Commit Guidelines
 

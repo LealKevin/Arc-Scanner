@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -60,7 +61,19 @@ func (a *App) startup(ctx context.Context) {
 		setWindowAboveFullscreen()
 	}()
 
-	_, err = os.Stat("items.json")
+	// Get app data directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	appDataDir := filepath.Join(homeDir, "Library", "Application Support", "arc-scanner")
+	err = os.MkdirAll(appDataDir, 0755)
+	if err != nil {
+		panic(err)
+	}
+	itemsPath := filepath.Join(appDataDir, "items.json")
+
+	_, err = os.Stat(itemsPath)
 	if os.IsNotExist(err) {
 		fmt.Println("items.json not found, creating...")
 		items, err := fetchItems()
@@ -68,7 +81,7 @@ func (a *App) startup(ctx context.Context) {
 			panic(err)
 		}
 
-		err = saveItemsJSON(items)
+		err = saveItemsJSON(items, itemsPath)
 		if err != nil {
 			panic(err)
 		}
@@ -76,7 +89,7 @@ func (a *App) startup(ctx context.Context) {
 		fmt.Println("items.json found, loading...")
 	}
 
-	itemsJson, err := getItems()
+	itemsJson, err := getItems(itemsPath)
 	if err != nil {
 		panic(err)
 	}
@@ -204,10 +217,10 @@ func fetchItems() (Items []Item, err error) {
 	return items, nil
 }
 
-func getItems() (Items []Item, err error) {
+func getItems(path string) (Items []Item, err error) {
 	var items []Item
 
-	data, err := os.ReadFile("items.json")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read items.json: %w", err)
 	}
@@ -220,8 +233,8 @@ func getItems() (Items []Item, err error) {
 	return items, nil
 }
 
-func saveItemsJSON(items []Item) error {
-	file, err := os.Create("items.json")
+func saveItemsJSON(items []Item, path string) error {
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create items.json: %w", err)
 	}

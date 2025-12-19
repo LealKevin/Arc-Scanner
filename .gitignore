@@ -11,3 +11,4 @@ items.json
 images/
 .DS_Store
 .claude/
+entitlements.plist

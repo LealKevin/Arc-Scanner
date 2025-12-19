@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/disintegration/imaging"
@@ -17,15 +18,50 @@ type Scanner struct {
 	tesseractPath string
 }
 
-func NewScanner() *Scanner {
-	tesseractPath := "tesseract" // Default to PATH
-
-	if _, err := os.Stat("/opt/homebrew/bin/tesseract"); err == nil {
-		tesseractPath = "/opt/homebrew/bin/tesseract"
-	} else if _, err := os.Stat("/usr/local/bin/tesseract"); err == nil {
-		tesseractPath = "/usr/local/bin/tesseract"
+func findTesseractPath() string {
+	// Try bundled version first
+	exe, err := os.Executable()
+	if err == nil {
+		// From arc-scanner.app/Contents/MacOS/arc-scanner
+		// Navigate to arc-scanner.app/Contents/Resources/bin/tesseract
+		bundledPath := filepath.Join(
+			filepath.Dir(exe),
+			"..", "Resources", "bin", "tesseract",
+		)
+		if _, err := os.Stat(bundledPath); err == nil {
+			return bundledPath
+		}
 	}
 
+	// Fallback to system installations (for development)
+	if _, err := os.Stat("/opt/homebrew/bin/tesseract"); err == nil {
+		return "/opt/homebrew/bin/tesseract"
+	}
+	if _, err := os.Stat("/usr/local/bin/tesseract"); err == nil {
+		return "/usr/local/bin/tesseract"
+	}
+
+	// Final fallback to PATH
+	return "tesseract"
+}
+
+func getTessdataPath() string {
+	exe, err := os.Executable()
+	if err == nil {
+		tessdataPath := filepath.Join(
+			filepath.Dir(exe),
+			"..", "Resources", "tessdata",
+		)
+		if _, err := os.Stat(tessdataPath); err == nil {
+			return tessdataPath
+		}
+	}
+	return "" // Let Tesseract use default
+}
+
+func NewScanner() *Scanner {
+	tesseractPath := findTesseractPath()
+	fmt.Printf("Using Tesseract at: %s\n", tesseractPath)
 	return &Scanner{
 		tesseractPath: tesseractPath,
 	}
@@ -66,6 +102,12 @@ func (s *Scanner) ProcessImage(img image.Image) (string, error) {
 		"--oem", "1", // LSTM only (faster)
 		"-c", "tessedit_char_whitelist=0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 	)
+
+	// Set tessdata location if using bundled version
+	if tessdataPath := getTessdataPath(); tessdataPath != "" {
+		cmd.Env = append(os.Environ(),
+			"TESSDATA_PREFIX="+tessdataPath)
+	}
 
 	// Pipe the image buffer to stdin
 	cmd.Stdin = &buf
