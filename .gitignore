@@ -1,0 +1,13 @@
+build/bin
+build/darwin
+node_modules
+frontend/dist
+frontend/node_modules
+frontend/wailsjs
+*.app
+arc-scanner
+test-build
+items.json
+images/
+.DS_Store
+.claude/

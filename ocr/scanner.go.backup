@@ -1,0 +1,71 @@
+package ocr
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/disintegration/imaging"
+	"github.com/go-vgo/robotgo"
+	"github.com/vcaesar/imgo"
+)
+
+type Scanner struct {
+	tesseractPath string
+}
+
+func NewScanner() *Scanner {
+	tesseractPath := "tesseract" // Default to PATH
+
+	if _, err := os.Stat("/opt/homebrew/bin/tesseract"); err == nil {
+		tesseractPath = "/opt/homebrew/bin/tesseract"
+	} else if _, err := os.Stat("/usr/local/bin/tesseract"); err == nil {
+		tesseractPath = "/usr/local/bin/tesseract"
+	}
+
+	return &Scanner{
+		tesseractPath: tesseractPath,
+	}
+}
+
+func (s *Scanner) Close() {
+	// Nothing to close when using CLI
+}
+
+func (s *Scanner) TakeScreenshot(path string, x, y int) error {
+	bitmap := robotgo.CaptureScreen(x, y-200, 350, 380)
+	img := robotgo.ToImage(bitmap)
+	greyImg := imaging.Grayscale(img)
+	greyImg = imaging.Invert(greyImg)
+	greyImg = imaging.AdjustContrast(greyImg, 20)
+	greyImg = imaging.Sharpen(greyImg, 20)
+
+	err := imgo.Save(path, greyImg)
+	if err != nil {
+		return fmt.Errorf("failed to save screenshot: %w", err)
+	}
+	return nil
+}
+
+func (s *Scanner) ProcessImage(imagePath string) (string, error) {
+	cmd := exec.Command(
+		s.tesseractPath,
+		imagePath,
+		"stdout",     // Output to stdout instead of file
+		"--psm", "6", // Uniform text block (faster than PSM 1)
+		"--oem", "1", // LSTM only (faster)
+		"-c", "tessedit_char_whitelist=0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("OCR failed: %s (stderr: %s)", err, string(exitErr.Stderr))
+		}
+		return "", fmt.Errorf("OCR failed: %w", err)
+	}
+
+	text := strings.TrimSpace(string(output))
+	return text, nil
+}

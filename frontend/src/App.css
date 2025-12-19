@@ -1,0 +1,7 @@
+#app {
+  height: 100vh;
+  text-align: center;
+
+  pointer-events: none;
+  background: transparent;
+}
