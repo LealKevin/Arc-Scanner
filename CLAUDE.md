@@ -11,12 +11,13 @@ Arc Scanner is a desktop overlay application built with Wails (Go + React/TypeSc
 - **Backend**: Go 1.24 with Wails v2.11.0
 - **Frontend**: React 18 + TypeScript + Vite
 - **OCR**: Tesseract (via command-line execution)
-- **Platform Support**: macOS (with Darwin-specific window management)
+- **Platform Support**: macOS and Windows (with platform-specific window management)
 - **Additional Libraries**:
-  - `robotgo` - for mouse position tracking
-  - `gohook` - for keyboard event hooks
-  - `screenshot` - for screen capture
-  - `imaging` - for image processing
+  - `robotgo` - for mouse position tracking (cross-platform)
+  - `gohook` - for keyboard event hooks (cross-platform)
+  - `screenshot` - for screen capture (cross-platform)
+  - `imaging` - for image processing (cross-platform)
+  - `lxn/win` - for Windows API calls (Windows only)
 
 ## Commands
 
@@ -27,6 +28,8 @@ wails dev
 Runs live development mode with hot reload. Frontend dev server available at http://localhost:34115.
 
 ### Building
+
+#### macOS
 
 **For distribution (self-contained):**
 ```bash
@@ -44,6 +47,25 @@ Standard Wails build without bundling. Requires system Tesseract. Faster to buil
 - `./scripts/build-bundled.sh` = Bundles Tesseract → Runs `wails build` → Copies resources into .app
 - `wails build` = Just builds the .app (no Tesseract bundling)
 
+#### Windows
+
+**For distribution (self-contained):**
+```batch
+scripts\build-bundled-windows.bat
+```
+Creates a fully self-contained .exe with bundled Tesseract. No user setup required - just download and run. Output: `build/bin/arc-scanner.exe` (~15-20MB)
+
+**For quick local testing:**
+```bash
+wails build -platform windows/amd64
+```
+Standard Wails build without bundling. Requires system Tesseract. Faster to build but NOT suitable for distribution. Output: `build/bin/arc-scanner.exe` (~10MB)
+
+**Cross-compilation:**
+You can build Windows executables from macOS/Linux using `wails build -platform windows/amd64`
+
+**See WINDOWS_BUILD.md for detailed Windows build instructions.**
+
 ### Frontend Commands
 ```bash
 cd frontend
@@ -57,7 +79,9 @@ npm run build        # Build frontend (TypeScript + Vite)
 ### Application Flow
 
 1. **Startup** (`main.go`): Creates frameless, always-on-top window positioned at top-right corner
-2. **Window Management** (`window_darwin.go`): Uses Cocoa framework to set window above fullscreen apps
+2. **Window Management**:
+   - macOS (`window_darwin.go`): Uses Cocoa framework to set window above fullscreen apps
+   - Windows (`window_windows.go`): Uses Windows API to set HWND_TOPMOST
 3. **Keyboard Hook** (`app.go:105-163`): Global keyboard listener for 'y' (scan) and 'u' (toggle visibility)
 4. **Scan Process**:
    - Mouse position detected via `robotgo`
@@ -76,9 +100,11 @@ npm run build        # Build frontend (TypeScript + Vite)
 
 ### Key Files
 
-- `app.go`: Main application logic, item database management, OCR orchestration
-- `ocr/scanner.go`: Screenshot capture and Tesseract integration
+- `app.go`: Main application logic, item database management, OCR orchestration, platform-agnostic app data paths
+- `ocr/scanner.go`: Screenshot capture and Tesseract integration with platform-specific path detection
 - `window_darwin.go`: macOS-specific window level management using CGI/Cocoa
+- `window_windows.go`: Windows-specific window management using Windows API
+- `window_other.go`: Stub for unsupported platforms
 - `frontend/src/App.tsx`: React overlay UI with fade animations for item display
 - `items.json`: Cached item database (auto-generated on first run)
 
@@ -102,39 +128,66 @@ Screenshot preprocessing is critical for accuracy (see `ocr/scanner.go:44-47`).
 
 ### Platform-Specific Code
 
-- `window_darwin.go`: macOS window management with Cocoa
-- `window_other.go`: No-op for non-Darwin platforms
-- Build tags (`//go:build darwin`) control compilation
+- `window_darwin.go`: macOS window management with Cocoa (build tag: `//go:build darwin`)
+- `window_windows.go`: Windows window management with Windows API (build tag: `//go:build windows`)
+- `window_other.go`: Stub for unsupported platforms (build tag: `//go:build !darwin`)
+- `app.go`: Platform-agnostic app data paths (detects Windows vs macOS at runtime)
+- `ocr/scanner.go`: Platform-specific Tesseract path detection (detects Windows vs macOS paths)
+
+Build tags control compilation - only the appropriate platform files are compiled for each target.
 
 ## Dependencies
 
 ### External Requirements (Development Only)
 
-For development, **Tesseract OCR** must be installed:
+**macOS:**
+Tesseract OCR must be installed for development:
 - `/opt/homebrew/bin/tesseract` (Homebrew ARM)
 - `/usr/local/bin/tesseract` (Homebrew Intel)
 - Or available in PATH
 
+**Windows:**
+Tesseract OCR must be installed for development and bundling:
+- Download from https://github.com/UB-Mannheim/tesseract/wiki
+- Install to `C:\Program Files\Tesseract-OCR` (default)
+- Or set `TESSERACT_PATH` environment variable
+
 ### Distribution (Self-Contained)
 
+**macOS:**
 When built with `./scripts/build-bundled.sh`, the app bundles:
 - Tesseract binary (102KB)
 - Required dylibs (libleptonica, libtesseract, libarchive ~5.5MB)
 - Training data (eng.traineddata ~3.9MB)
 - **Total overhead: ~9.5MB**
 
-The bundled app requires NO external dependencies - users just download and run.
-
 Scanner auto-detects Tesseract location in this order:
 1. Bundled version (in .app/Contents/Resources/bin/)
 2. Homebrew installation (for development)
 3. System PATH
 
+**Windows:**
+When built with `scripts\build-bundled-windows.bat`, the app bundles:
+- Tesseract binary (400KB)
+- Required DLLs (libleptonica, libtesseract, runtime DLLs ~8MB)
+- Training data (eng.traineddata ~3.9MB)
+- **Total overhead: ~12MB**
+
+Scanner auto-detects Tesseract location in this order:
+1. Bundled version (in build/windows/bin/tesseract.exe)
+2. System installation (`C:\Program Files\Tesseract-OCR\tesseract.exe`)
+3. System PATH
+
+**Both platforms:**
+The bundled app requires NO external dependencies - users just download and run.
+
 ### Wails Bindings
 
 Frontend automatically gets generated bindings in `frontend/wailsjs/` - these are auto-generated and should not be manually edited.
 
-## macOS Permissions (For End Users)
+## Platform-Specific Notes
+
+### macOS Permissions (For End Users)
 
 The app requires two permissions on first launch:
 
@@ -146,6 +199,21 @@ The app requires two permissions on first launch:
 - Go to Accessibility → Add arc-scanner.app → Enable checkbox
 - Go to Screen Recording → Add arc-scanner.app → Enable checkbox
 - Restart the app
+
+### Windows Requirements (For End Users)
+
+**WebView2 Runtime:**
+- Usually pre-installed on Windows 10/11
+- Download from https://developer.microsoft.com/microsoft-edge/webview2/ if needed
+
+**No special permissions required** (unlike macOS):
+- Keyboard hooks work without admin rights
+- Screen capture works without special permissions
+- Windows Defender may flag unsigned .exe (expected behavior)
+
+**App Data Location:**
+- macOS: `~/Library/Application Support/arc-scanner/items.json`
+- Windows: `%APPDATA%\arc-scanner\items.json` (C:\Users\<username>\AppData\Roaming\arc-scanner)
 
 ## Git Commit Guidelines
 

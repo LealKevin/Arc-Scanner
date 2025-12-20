@@ -19,39 +19,80 @@ type Scanner struct {
 }
 
 func findTesseractPath() string {
-	// Try bundled version first
 	exe, err := os.Executable()
 	if err == nil {
-		// From arc-scanner.app/Contents/MacOS/arc-scanner
-		// Navigate to arc-scanner.app/Contents/Resources/bin/tesseract
-		bundledPath := filepath.Join(
-			filepath.Dir(exe),
-			"..", "Resources", "bin", "tesseract",
-		)
+		// Try bundled version first (platform-specific)
+		var bundledPath string
+
+		if filepath.Separator == '\\' {
+			// Windows: arc-scanner.exe is in build/bin/
+			// Look for build/windows/bin/tesseract.exe
+			bundledPath = filepath.Join(
+				filepath.Dir(exe),
+				"..", "windows", "bin", "tesseract.exe",
+			)
+		} else {
+			// macOS: From arc-scanner.app/Contents/MacOS/arc-scanner
+			// Navigate to arc-scanner.app/Contents/Resources/bin/tesseract
+			bundledPath = filepath.Join(
+				filepath.Dir(exe),
+				"..", "Resources", "bin", "tesseract",
+			)
+		}
+
 		if _, err := os.Stat(bundledPath); err == nil {
 			return bundledPath
 		}
 	}
 
 	// Fallback to system installations (for development)
-	if _, err := os.Stat("/opt/homebrew/bin/tesseract"); err == nil {
-		return "/opt/homebrew/bin/tesseract"
-	}
-	if _, err := os.Stat("/usr/local/bin/tesseract"); err == nil {
-		return "/usr/local/bin/tesseract"
+	if filepath.Separator == '\\' {
+		// Windows system paths
+		windowsPaths := []string{
+			"C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+			"C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe",
+		}
+		for _, path := range windowsPaths {
+			if _, err := os.Stat(path); err == nil {
+				return path
+			}
+		}
+	} else {
+		// macOS Homebrew paths
+		if _, err := os.Stat("/opt/homebrew/bin/tesseract"); err == nil {
+			return "/opt/homebrew/bin/tesseract"
+		}
+		if _, err := os.Stat("/usr/local/bin/tesseract"); err == nil {
+			return "/usr/local/bin/tesseract"
+		}
 	}
 
 	// Final fallback to PATH
+	if filepath.Separator == '\\' {
+		return "tesseract.exe"
+	}
 	return "tesseract"
 }
 
 func getTessdataPath() string {
 	exe, err := os.Executable()
 	if err == nil {
-		tessdataPath := filepath.Join(
-			filepath.Dir(exe),
-			"..", "Resources", "tessdata",
-		)
+		var tessdataPath string
+
+		if filepath.Separator == '\\' {
+			// Windows: build/windows/tessdata
+			tessdataPath = filepath.Join(
+				filepath.Dir(exe),
+				"..", "windows", "tessdata",
+			)
+		} else {
+			// macOS: arc-scanner.app/Contents/Resources/tessdata
+			tessdataPath = filepath.Join(
+				filepath.Dir(exe),
+				"..", "Resources", "tessdata",
+			)
+		}
+
 		if _, err := os.Stat(tessdataPath); err == nil {
 			return tessdataPath
 		}
