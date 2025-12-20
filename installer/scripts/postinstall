@@ -1,0 +1,24 @@
+#!/bin/bash
+# postinstall script for arc-scanner
+# This runs after the installer copies files to /Applications
+
+# Remove quarantine attribute from the installed app
+# This allows the app to run without Gatekeeper warnings
+xattr -cr "/Applications/arc-scanner.app" 2>/dev/null || true
+
+# Ensure executable permissions
+chmod +x "/Applications/arc-scanner.app/Contents/MacOS/arc-scanner"
+chmod +x "/Applications/arc-scanner.app/Contents/Resources/bin/tesseract"
+
+# Sign the app components with ad-hoc signature
+# This is needed for Apple Silicon Macs
+for dylib in "/Applications/arc-scanner.app/Contents/Resources/lib"/*.dylib; do
+    if [ -f "$dylib" ]; then
+        codesign --force --sign - "$dylib" 2>/dev/null || true
+    fi
+done
+
+codesign --force --deep --sign - "/Applications/arc-scanner.app/Contents/Resources/bin/tesseract" 2>/dev/null || true
+codesign --force --deep --sign - "/Applications/arc-scanner.app" 2>/dev/null || true
+
+exit 0
