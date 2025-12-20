@@ -49,20 +49,27 @@ Standard Wails build without bundling. Requires system Tesseract. Faster to buil
 
 #### Windows
 
-**For distribution (self-contained):**
+**For distribution (self-contained) - FROM macOS/Linux:**
+```bash
+./scripts/build-bundled-windows-cross.sh
+```
+Cross-compiles Windows .exe on macOS/Linux with bundled Tesseract. Downloads Windows Tesseract binaries automatically. No Windows machine needed! Output: `build/bin/arc-scanner.exe` (~15-20MB)
+
+**Requirements:** One of these extraction tools:
+- `brew install p7zip` (provides `7z` command)
+- `brew install innoextract`
+
+**For distribution (self-contained) - FROM Windows:**
 ```batch
 scripts\build-bundled-windows.bat
 ```
-Creates a fully self-contained .exe with bundled Tesseract. No user setup required - just download and run. Output: `build/bin/arc-scanner.exe` (~15-20MB)
+Builds on Windows with bundled Tesseract. Requires local Tesseract installation. Output: `build/bin/arc-scanner.exe` (~15-20MB)
 
 **For quick local testing:**
 ```bash
 wails build -platform windows/amd64
 ```
 Standard Wails build without bundling. Requires system Tesseract. Faster to build but NOT suitable for distribution. Output: `build/bin/arc-scanner.exe` (~10MB)
-
-**Cross-compilation:**
-You can build Windows executables from macOS/Linux using `wails build -platform windows/amd64`
 
 **See WINDOWS_BUILD.md for detailed Windows build instructions.**
 

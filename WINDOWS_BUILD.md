@@ -29,13 +29,51 @@ This guide explains how to build Arc Scanner for Windows as a self-contained exe
 
 ## Building
 
-### Option 1: Self-Contained Build (Recommended for Distribution)
+### Option 1: Cross-Compile from macOS/Linux (Recommended!)
 
-This creates a fully portable build with bundled Tesseract (~15-20MB total).
+**This is the easiest way to build Windows releases if you're on macOS or Linux!**
+
+Build a fully self-contained Windows .exe without needing a Windows machine:
+
+```bash
+./scripts/build-bundled-windows-cross.sh
+```
+
+**Prerequisites:**
+- Install an extraction tool (one of these):
+  ```bash
+  brew install p7zip        # Provides 7z command
+  # OR
+  brew install innoextract  # Alternative extractor
+  ```
+
+**What it does:**
+1. Downloads official Windows Tesseract binaries from UB-Mannheim
+2. Extracts tesseract.exe, DLLs, and training data
+3. Cross-compiles the Windows .exe using Wails
+4. Bundles everything into a portable package
+
+**Output:**
+- `build/bin/arc-scanner.exe` - Main executable
+- `build/bin/windows/` - Bundled Tesseract and dependencies
+- Total size: ~15-20MB
+
+**To distribute:**
+- Copy the entire `build/bin` folder
+- Users can run `arc-scanner.exe` directly (no installation needed)
+
+---
+
+### Option 2: Self-Contained Build on Windows
+
+If you're building directly on a Windows machine:
 
 ```batch
 scripts\build-bundled-windows.bat
 ```
+
+**Prerequisites:**
+- Tesseract OCR installed locally (see Prerequisites section)
 
 **Output:**
 - `build\bin\arc-scanner.exe` - Main executable
@@ -46,7 +84,7 @@ scripts\build-bundled-windows.bat
 - Users can run `arc-scanner.exe` directly (no installation needed)
 - No external dependencies required
 
-### Option 2: Quick Build (Development Only)
+### Option 3: Quick Build (Development Only)
 
 This builds without bundling Tesseract. Requires system Tesseract installation.
 
