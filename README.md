@@ -1,19 +1,62 @@
-# README
+# Arc Scanner
 
-## About
+A desktop overlay app that scans in-game items from Arc Raiders and displays their value using OCR.
 
-This is the official Wails React-TS template.
+## Requirements
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+- macOS (Apple Silicon or Intel)
+- Go 1.24+
+- Node.js 18+
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation)
+- Tesseract OCR (`brew install tesseract`)
 
-## Live Development
+## Development
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+```bash
+wails dev
+```
+
+Runs live development mode with hot reload.
 
 ## Building
 
-To build a redistributable, production mode package, use `wails build`.
+### For Distribution (Recommended)
+
+```bash
+./scripts/create-installer.sh
+```
+
+Creates a `.pkg` installer at `build/arc-scanner-installer.pkg` that:
+- Bundles Tesseract and all dependencies (no user setup required)
+- Installs to `/Applications`
+- Removes quarantine automatically after install
+
+### For Local Testing
+
+```bash
+./scripts/build-bundled.sh
+```
+
+Creates a self-contained `.app` at `build/bin/arc-scanner.app` with bundled Tesseract.
+
+### Quick Build (Development Only)
+
+```bash
+wails build
+```
+
+Standard Wails build. Requires system Tesseract. Not suitable for distribution.
+
+## Usage
+
+1. Launch the app - a small green dot appears at the top-right corner
+2. In game, hover your mouse over an item
+3. Press **'y'** to scan
+4. The item value appears in the overlay
+5. Press **'u'** to hide/show the overlay
+
+## macOS Permissions
+
+The app requires:
+- **Accessibility** - to detect keyboard input
+- **Screen Recording** - to capture screenshots for OCR
