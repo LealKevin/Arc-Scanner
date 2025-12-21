@@ -149,10 +149,9 @@ build/
     windows/                 # Bundled resources
       bin/
         tesseract.exe        # Tesseract binary (400KB)
-      lib/
         libleptonica-5.dll   # ~2MB
         libtesseract-5.dll   # ~4MB
-        [other DLLs]         # ~2MB
+        [other DLLs]         # ~2MB (all DLLs in same dir as tesseract.exe)
       tessdata/
         eng.traineddata      # ~3.9MB
 ```

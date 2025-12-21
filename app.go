@@ -44,9 +44,13 @@ func (a *App) startup(ctx context.Context) {
 			break
 		}
 	}
+	// Fallback: use first screen if IsCurrent not found (Windows compatibility)
+	if currentScreen.Size.Width == 0 && len(screens) > 0 {
+		currentScreen = screens[0]
+	}
 
-	windowWidth := 400
-	windowHeight := 300
+	windowWidth := 1
+	windowHeight := 1
 
 	x := currentScreen.Size.Width - windowWidth
 	y := 0
@@ -97,7 +101,6 @@ func (a *App) startup(ctx context.Context) {
 	fmt.Println("Items retrieved, count:", len(itemsMap))
 
 	a.scanner = ocr.NewScanner()
-	defer a.scanner.Close()
 
 	go func() {
 		evChan := hook.Start()

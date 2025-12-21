@@ -12,6 +12,56 @@ TEMP_DIR="build/temp-tesseract"
 TESSERACT_VERSION="5.3.3.20231005"
 TESSERACT_URL="https://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-w64-setup-${TESSERACT_VERSION}.exe"
 
+# Function to find mingw-w64 gcc
+find_mingw_gcc() {
+    local HOMEBREW_ARM="/opt/homebrew/bin/x86_64-w64-mingw32-gcc"
+    local HOMEBREW_INTEL="/usr/local/bin/x86_64-w64-mingw32-gcc"
+
+    if [ -f "$HOMEBREW_ARM" ]; then
+        echo "$HOMEBREW_ARM"
+    elif [ -f "$HOMEBREW_INTEL" ]; then
+        echo "$HOMEBREW_INTEL"
+    elif command -v x86_64-w64-mingw32-gcc &> /dev/null; then
+        echo "x86_64-w64-mingw32-gcc"
+    fi
+}
+
+# Function to find mingw-w64 g++
+find_mingw_gxx() {
+    local HOMEBREW_ARM="/opt/homebrew/bin/x86_64-w64-mingw32-g++"
+    local HOMEBREW_INTEL="/usr/local/bin/x86_64-w64-mingw32-g++"
+
+    if [ -f "$HOMEBREW_ARM" ]; then
+        echo "$HOMEBREW_ARM"
+    elif [ -f "$HOMEBREW_INTEL" ]; then
+        echo "$HOMEBREW_INTEL"
+    elif command -v x86_64-w64-mingw32-g++ &> /dev/null; then
+        echo "x86_64-w64-mingw32-g++"
+    fi
+}
+
+# Check for mingw-w64 (required for CGO cross-compilation)
+echo "Checking for mingw-w64..."
+MINGW_GCC=$(find_mingw_gcc)
+MINGW_GXX=$(find_mingw_gxx)
+
+if [ -z "$MINGW_GCC" ] || [ -z "$MINGW_GXX" ]; then
+    echo ""
+    echo "========================================="
+    echo "ERROR: mingw-w64 is required!"
+    echo "========================================="
+    echo ""
+    echo "This project uses robotgo and gohook which require CGO."
+    echo "To cross-compile for Windows, install mingw-w64:"
+    echo ""
+    echo "  brew install mingw-w64"
+    echo ""
+    exit 1
+fi
+
+echo "  ✓ Found: $MINGW_GCC"
+echo ""
+
 # Step 1: Download and extract Windows Tesseract
 echo "Step 1/4: Downloading Windows Tesseract binaries..."
 echo "-----------------------------------------------"
@@ -134,6 +184,16 @@ echo ""
 # Step 3: Build with Wails
 echo "Step 3/4: Building app with Wails for Windows..."
 echo "-----------------------------------------------"
+echo "Cross-compiling with CGO enabled..."
+echo "  CC=$MINGW_GCC"
+echo "  CXX=$MINGW_GXX"
+echo ""
+
+CGO_ENABLED=1 \
+CC="$MINGW_GCC" \
+CXX="$MINGW_GXX" \
+GOOS=windows \
+GOARCH=amd64 \
 wails build -platform windows/amd64
 echo ""
 
@@ -152,13 +212,13 @@ fi
 # Create directory structure next to the .exe
 echo "Creating directory structure..."
 mkdir -p "$BIN_DIR/windows/bin"
-mkdir -p "$BIN_DIR/windows/lib"
 mkdir -p "$BIN_DIR/windows/tessdata"
 
 # Copy bundled resources
+# Note: DLLs must be in the same directory as tesseract.exe for Windows to find them
 echo "Copying resources..."
-cp "$BUILD_DIR/bin/tesseract.exe" "$BIN_DIR/windows/bin/" 2>/dev/null && echo "  ✓ Copied bin/" || echo "  ✗ Failed to copy bin/"
-cp "$BUILD_DIR/lib"/* "$BIN_DIR/windows/lib/" 2>/dev/null && echo "  ✓ Copied lib/" || echo "  ✗ Failed to copy lib/"
+cp "$BUILD_DIR/bin/tesseract.exe" "$BIN_DIR/windows/bin/" 2>/dev/null && echo "  ✓ Copied tesseract.exe" || echo "  ✗ Failed to copy tesseract.exe"
+cp "$BUILD_DIR/lib"/* "$BIN_DIR/windows/bin/" 2>/dev/null && echo "  ✓ Copied DLLs to bin/" || echo "  ✗ Failed to copy DLLs"
 cp "$BUILD_DIR/tessdata/eng.traineddata" "$BIN_DIR/windows/tessdata/" 2>/dev/null && echo "  ✓ Copied tessdata/" || echo "  ✗ Failed to copy tessdata/"
 
 # Cleanup temp directory
@@ -174,10 +234,11 @@ echo "  App is self-contained with bundled Tesseract"
 echo ""
 echo "Directory structure:"
 echo "  build/bin/"
-echo "  ├── arc-scanner.exe          (~10-12MB)"
+echo "  ├── arc-scanner.exe              (~10-12MB)"
 echo "  └── windows/"
-echo "      ├── bin/tesseract.exe    (~400KB)"
-echo "      ├── lib/*.dll            (~8MB)"
+echo "      ├── bin/"
+echo "      │   ├── tesseract.exe        (~400KB)"
+echo "      │   └── *.dll                (~8MB)"
 echo "      └── tessdata/eng.traineddata (~3.9MB)"
 echo ""
 echo "To distribute:"

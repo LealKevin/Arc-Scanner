@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,18 +15,21 @@ import (
 var assets embed.FS
 
 func main() {
+	// Set WebView2 to use transparent background on Windows
+	os.Setenv("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "00000000")
+
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "arc-scanner",
-		Width:  400,
-		Height: 300,
+		Width:  1,
+		Height: 1,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 0, G: 38, B: 54, A: 0},
+		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
 		Frameless:        true,
 		AlwaysOnTop:      true,
 		Mac: &mac.Options{
@@ -37,9 +41,10 @@ func main() {
 			},
 		},
 		Windows: &windows.Options{
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  false,
-			DisableWindowIcon:    false,
+			WebviewIsTransparent:              true,
+			WindowIsTranslucent:               false,
+			DisableWindowIcon:                 false,
+			DisableFramelessWindowDecorations: true,
 		},
 		OnStartup: app.startup,
 		Bind: []interface{}{

@@ -26,10 +26,10 @@ func findTesseractPath() string {
 
 		if filepath.Separator == '\\' {
 			// Windows: arc-scanner.exe is in build/bin/
-			// Look for build/windows/bin/tesseract.exe
+			// Look for build/bin/windows/bin/tesseract.exe (relative: windows/bin/tesseract.exe)
 			bundledPath = filepath.Join(
 				filepath.Dir(exe),
-				"..", "windows", "bin", "tesseract.exe",
+				"windows", "bin", "tesseract.exe",
 			)
 		} else {
 			// macOS: From arc-scanner.app/Contents/MacOS/arc-scanner
@@ -80,10 +80,10 @@ func getTessdataPath() string {
 		var tessdataPath string
 
 		if filepath.Separator == '\\' {
-			// Windows: build/windows/tessdata
+			// Windows: build/bin/windows/tessdata (relative: windows/tessdata)
 			tessdataPath = filepath.Join(
 				filepath.Dir(exe),
-				"..", "windows", "tessdata",
+				"windows", "tessdata",
 			)
 		} else {
 			// macOS: arc-scanner.app/Contents/Resources/tessdata
@@ -143,6 +143,9 @@ func (s *Scanner) ProcessImage(img image.Image) (string, error) {
 		"--oem", "1", // LSTM only (faster)
 		"-c", "tessedit_char_whitelist=0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 	)
+
+	// Hide console window on Windows
+	hideConsoleWindow(cmd)
 
 	// Set tessdata location if using bundled version
 	if tessdataPath := getTessdataPath(); tessdataPath != "" {
