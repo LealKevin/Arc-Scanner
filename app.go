@@ -62,11 +62,10 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	// Get app data directory
-	homeDir, err := os.UserHomeDir()
+	appDataDir, err := getAppDataDir()
 	if err != nil {
 		panic(err)
 	}
-	appDataDir := filepath.Join(homeDir, "Library", "Application Support", "arc-scanner")
 	err = os.MkdirAll(appDataDir, 0755)
 	if err != nil {
 		panic(err)
@@ -349,4 +348,27 @@ func (itemMap ItemMap) getItemInfo(item Item) string {
 		info += fmt.Sprintf("\tTotal value: %d\n", valueOfRecycleComponents)
 	}
 	return info
+}
+
+func getAppDataDir() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	// Platform-specific app data directory
+	var appDataDir string
+	if os.Getenv("OS") == "Windows_NT" || filepath.Separator == '\\' {
+		// Windows: Use APPDATA environment variable
+		appData := os.Getenv("APPDATA")
+		if appData == "" {
+			appData = filepath.Join(homeDir, "AppData", "Roaming")
+		}
+		appDataDir = filepath.Join(appData, "arc-scanner")
+	} else {
+		// macOS and other Unix-like systems
+		appDataDir = filepath.Join(homeDir, "Library", "Application Support", "arc-scanner")
+	}
+
+	return appDataDir, nil
 }
