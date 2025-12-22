@@ -79,8 +79,9 @@ func (a *App) initWindow(ctx context.Context) error {
 	runtime.WindowSetPosition(ctx, x, 0)
 
 	// Set window level above fullscreen apps (needs delay for window creation)
+	// Windows needs more time for WebView2 transparency to initialize properly
 	go func() {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		setWindowAboveFullscreen()
 	}()
 
