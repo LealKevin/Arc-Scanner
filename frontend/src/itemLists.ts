@@ -1,10 +1,8 @@
-// Workshop requirement type
 export type WorkshopRequirement = {
   workshop: string;
   level: number;
 };
 
-// Map of item ID to workshop requirements
 export const WORKSHOP_ITEMS: Record<string, WorkshopRequirement[]> = {
   // Scrappy (L2-L4)
   "dog-collar": [{ workshop: "Scrappy", level: 2 }],

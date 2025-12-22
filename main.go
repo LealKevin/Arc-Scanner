@@ -18,10 +18,8 @@ func main() {
 	// Set WebView2 to use transparent background on Windows
 	os.Setenv("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "00000000")
 
-	// Create an instance of the app structure
 	app := NewApp()
 
-	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "arc-scanner",
 		Width:  1,

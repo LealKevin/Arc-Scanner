@@ -4,7 +4,7 @@ package config
 const (
 	// OCR capture area dimensions (relative to mouse cursor position)
 	OcrBoxWidth   = 450
-	OcrBoxHeight  = 380
+	OcrBoxHeight  = 480
 	OcrBoxYOffset = 400
 	OcrBoxXOffset = 0
 
@@ -20,7 +20,7 @@ const (
 	// Tesseract configuration
 	TesseractPSM       = "3" // Fully automatic page segmentation
 	TesseractOEM       = "1" // LSTM only (faster)
-	TesseractWhitelist = "0123456789/ ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	TesseractWhitelist = "0123456789/' ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	// Image processing parameters
 	ContrastLevel = 20
