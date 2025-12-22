@@ -103,7 +103,6 @@ export const PROJECT_ITEM_IDS = [
   "metal-parts",
 ];
 
-// Build KEEP_ITEM_IDS from quest + project + workshop items
 export const KEEP_ITEM_IDS: Set<string> = new Set([
   ...QUEST_ITEM_IDS,
   ...PROJECT_ITEM_IDS,

@@ -1,4 +1,3 @@
-// Package scanner provides OCR-based item scanning using Tesseract.
 package scanner
 
 import (
@@ -18,19 +17,16 @@ import (
 	"github.com/kbinani/screenshot"
 )
 
-// Scanner captures screenshots and performs OCR using Tesseract.
 type Scanner interface {
 	TakeScreenshot(x, y int) (image.Image, error)
 	ProcessImage(img image.Image) (string, error)
 }
 
-// TesseractScanner implements Scanner using the Tesseract OCR engine.
 type TesseractScanner struct {
 	tesseractPath string
 	tessdataPath  string
 }
 
-// New creates a new TesseractScanner with auto-detected paths.
 func New() *TesseractScanner {
 	tesseractPath := findTesseractPath()
 	tessdataPath := findTessdataPath()
@@ -45,8 +41,6 @@ func New() *TesseractScanner {
 	}
 }
 
-// TakeScreenshot captures a region of the screen relative to the cursor position.
-// The capture region is defined by config constants.
 func (s *TesseractScanner) TakeScreenshot(x, y int) (image.Image, error) {
 	captureRect := image.Rect(
 		x+config.OcrBoxXOffset,
@@ -69,15 +63,12 @@ func (s *TesseractScanner) TakeScreenshot(x, y int) (image.Image, error) {
 	return processed, nil
 }
 
-// ProcessImage performs OCR on the given image and returns the extracted text.
 func (s *TesseractScanner) ProcessImage(img image.Image) (string, error) {
-	// Encode image to PNG in memory
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		return "", fmt.Errorf("failed to encode image: %w", err)
 	}
 
-	// Build Tesseract command
 	cmd := exec.Command(
 		s.tesseractPath,
 		"stdin",  // Read from stdin
@@ -95,7 +86,6 @@ func (s *TesseractScanner) ProcessImage(img image.Image) (string, error) {
 		cmd.Env = append(os.Environ(), "TESSDATA_PREFIX="+s.tessdataPath)
 	}
 
-	// Pipe the image to stdin
 	cmd.Stdin = &buf
 
 	output, err := cmd.Output()
@@ -109,8 +99,6 @@ func (s *TesseractScanner) ProcessImage(img image.Image) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// findTesseractPath locates the Tesseract executable.
-// It checks bundled version first, then system installations.
 func findTesseractPath() string {
 	exe, err := os.Executable()
 	if err == nil {
@@ -120,18 +108,15 @@ func findTesseractPath() string {
 		}
 	}
 
-	// Fallback to system installations
 	for _, path := range systemTesseractPaths() {
 		if _, err := os.Stat(path); err == nil {
 			return path
 		}
 	}
 
-	// Final fallback to PATH
 	return tesseractBinaryName()
 }
 
-// findTessdataPath locates the Tesseract training data directory.
 func findTessdataPath() string {
 	exe, err := os.Executable()
 	if err == nil {
@@ -143,7 +128,6 @@ func findTessdataPath() string {
 	return "" // Let Tesseract use default
 }
 
-// getBundledPath constructs a path to bundled resources.
 func getBundledPath(exe, subdir, filename string) string {
 	var basePath string
 	if isWindows() {
@@ -158,12 +142,10 @@ func getBundledPath(exe, subdir, filename string) string {
 	return filepath.Join(basePath, subdir)
 }
 
-// isWindows returns true if running on Windows.
 func isWindows() bool {
 	return filepath.Separator == '\\'
 }
 
-// tesseractBinaryName returns the platform-specific Tesseract binary name.
 func tesseractBinaryName() string {
 	if isWindows() {
 		return "tesseract.exe"
@@ -171,7 +153,6 @@ func tesseractBinaryName() string {
 	return "tesseract"
 }
 
-// systemTesseractPaths returns platform-specific system installation paths.
 func systemTesseractPaths() []string {
 	if isWindows() {
 		return []string{

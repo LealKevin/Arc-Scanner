@@ -10,20 +10,16 @@ import (
 	"arc-scanner/internal/config"
 )
 
-// Repository handles item data persistence and retrieval.
 type Repository struct {
 	cachePath string
 }
 
-// NewRepository creates a new Repository with the given cache path.
 func NewRepository(cachePath string) *Repository {
 	return &Repository{
 		cachePath: cachePath,
 	}
 }
 
-// FetchFromAPI retrieves items from the MetaForge API.
-// Returns the full list of items or an error if the API is unavailable.
 func (r *Repository) FetchFromAPI() ([]Item, error) {
 	var allItems []Item
 
@@ -57,8 +53,6 @@ func (r *Repository) FetchFromAPI() ([]Item, error) {
 	return allItems, nil
 }
 
-// LoadFromCache reads items from the local cache file.
-// Returns the items or an error if the cache is missing or corrupted.
 func (r *Repository) LoadFromCache() ([]Item, error) {
 	data, err := os.ReadFile(r.cachePath)
 	if err != nil {
@@ -77,7 +71,6 @@ func (r *Repository) LoadFromCache() ([]Item, error) {
 	return items, nil
 }
 
-// SaveToCache writes items to the local cache file.
 func (r *Repository) SaveToCache(items []Item) error {
 	file, err := os.Create(r.cachePath)
 	if err != nil {
@@ -96,12 +89,10 @@ func (r *Repository) SaveToCache(items []Item) error {
 	return nil
 }
 
-// CachePath returns the path to the cache file.
 func (r *Repository) CachePath() string {
 	return r.cachePath
 }
 
-// CacheExists returns true if the cache file exists.
 func (r *Repository) CacheExists() bool {
 	_, err := os.Stat(r.cachePath)
 	return err == nil

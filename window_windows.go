@@ -37,7 +37,6 @@ func setWindowAboveFullscreen() {
 	win.SetWindowLong(hwnd, win.GWL_EXSTYLE,
 		win.GetWindowLong(hwnd, win.GWL_EXSTYLE)|win.WS_EX_LAYERED)
 
-	// Get screen width (physical pixels)
 	screenWidth, _, _ := procGetSystemMetrics.Call(uintptr(SM_CXSCREEN))
 
 	// Get DPI for this window (96 = 100%, 144 = 150%, etc.)

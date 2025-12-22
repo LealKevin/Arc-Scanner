@@ -9,12 +9,10 @@ import (
 // Ordered from highest to lowest to match longest suffix first.
 var romanSuffixes = []string{"IV", "III", "II", "I"}
 
-// Matcher handles matching OCR text to items in the database.
 type Matcher struct {
 	items []Item
 }
 
-// NewMatcher creates a new Matcher with the given item database.
 func NewMatcher(items []Item) *Matcher {
 	return &Matcher{
 		items: items,
@@ -48,8 +46,6 @@ func CleanOCRText(text string) []string {
 	return tokens
 }
 
-// FindItem searches for an item matching the given OCR tokens.
-// Returns the matched item or ErrItemNotFound if no match is found.
 func (m *Matcher) FindItem(tokens []string) (Item, error) {
 	textJoined := strings.Join(tokens, " ")
 	var bestMatch Item

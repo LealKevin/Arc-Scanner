@@ -1,4 +1,3 @@
-// Package keyboard provides global keyboard hook functionality.
 package keyboard
 
 import (
@@ -9,10 +8,8 @@ import (
 	hook "github.com/robotn/gohook"
 )
 
-// Handler is a function called when a registered key is pressed.
 type Handler func()
 
-// Hook manages global keyboard event listening with context-aware lifecycle.
 type Hook struct {
 	ctx      context.Context
 	handlers map[rune]Handler
@@ -20,7 +17,6 @@ type Hook struct {
 	started  bool
 }
 
-// New creates a new Hook that will respect the given context for shutdown.
 func New(ctx context.Context) *Hook {
 	return &Hook{
 		ctx:      ctx,
@@ -28,8 +24,6 @@ func New(ctx context.Context) *Hook {
 	}
 }
 
-// Register adds a handler for the specified key character.
-// The handler will be called each time the key is pressed.
 func (h *Hook) Register(key rune, handler Handler) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -37,9 +31,6 @@ func (h *Hook) Register(key rune, handler Handler) {
 	slog.Debug("keyboard handler registered", "key", string(key))
 }
 
-// Start begins listening for keyboard events in a goroutine.
-// It returns immediately. The hook will automatically stop when
-// the context is cancelled.
 func (h *Hook) Start() {
 	h.mu.Lock()
 	if h.started {
