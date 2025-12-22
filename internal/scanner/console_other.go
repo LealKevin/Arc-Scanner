@@ -1,6 +1,6 @@
 //go:build !windows
 
-package ocr
+package scanner
 
 import "os/exec"
 
