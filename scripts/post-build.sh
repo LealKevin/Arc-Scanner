@@ -46,14 +46,30 @@ chmod -R u+w "$APP_PATH/Contents/Resources"
 # Make tesseract binary executable
 chmod +x "$APP_PATH/Contents/Resources/bin/tesseract"
 
-# Remove quarantine attributes from entire app bundle
-echo "  Removing quarantine attributes..."
-xattr -cr "$APP_PATH"
+# Sign in correct order: innermost to outermost
+# 1. Sign all dylibs first
+echo "  Signing libraries..."
+for dylib in "$APP_PATH/Contents/Resources/lib"/*.dylib; do
+    if [ -f "$dylib" ]; then
+        codesign --force --sign - "$dylib"
+    fi
+done
 
-# Sign the entire app bundle with --deep flag
-# This signs all nested binaries and dylibs in one go
+# 2. Sign tesseract binary
+echo "  Signing tesseract..."
+codesign --force --sign - "$APP_PATH/Contents/Resources/bin/tesseract"
+
+# 3. Sign main executable
+echo "  Signing main executable..."
+codesign --force --sign - "$APP_PATH/Contents/MacOS/arc-scanner"
+
+# 4. Sign entire app bundle
 echo "  Signing app bundle..."
-codesign --deep --force --sign - "$APP_PATH"
+codesign --force --sign - "$APP_PATH"
+
+# 5. Remove ALL extended attributes (must be after signing)
+echo "  Removing extended attributes..."
+xattr -cr "$APP_PATH"
 
 echo "Done! App bundle ready at $APP_PATH"
 echo ""

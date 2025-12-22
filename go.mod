@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.3
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/go-vgo/robotgo v1.0.0
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018

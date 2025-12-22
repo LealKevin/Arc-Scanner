@@ -6,3 +6,11 @@ export type Item = {
 };
 
 export type ItemFoundEvent = Item;
+
+export type UpdateInfo = {
+  version: string;
+  url: string;
+  downloadUrl: string;
+  releaseNotes: string;
+  publishedAt: string;
+};

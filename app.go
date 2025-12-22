@@ -12,16 +12,21 @@ import (
 	"arc-scanner/internal/items"
 	"arc-scanner/internal/keyboard"
 	"arc-scanner/internal/scanner"
+	"arc-scanner/internal/updater"
 
 	"github.com/go-vgo/robotgo"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+// Version is set at build time via ldflags: -ldflags "-X main.Version=1.0.0"
+var Version = "dev"
 
 type App struct {
 	ctx     context.Context
 	scanner scanner.Scanner
 	matcher *items.Matcher
 	repo    *items.Repository
+	updater *updater.Updater
 }
 
 func NewApp() *App {
@@ -30,6 +35,9 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Request permissions upfront (macOS only) so user only needs one restart
+	requestPermissions()
 
 	if err := a.initWindow(ctx); err != nil {
 		slog.Error("failed to initialize window", "error", err)
@@ -45,9 +53,42 @@ func (a *App) startup(ctx context.Context) {
 	a.scanner = scanner.New()
 	a.matcher = items.NewMatcher(itemsList)
 
+	// Initialize updater
+	a.updater = updater.New("LealKevin", "Arc-Scanner", Version)
+
+	// Check for updates in background
+	go a.checkForUpdates()
+
 	a.initKeyboardHook(ctx, itemsList)
 
-	slog.Info("application started", "items", len(itemsList))
+	slog.Info("application started", "items", len(itemsList), "version", Version)
+}
+
+func (a *App) checkForUpdates() {
+	// Wait for frontend to be ready before checking
+	time.Sleep(500 * time.Millisecond)
+
+	slog.Info("checking for updates", "currentVersion", Version)
+
+	// Skip update check in dev mode
+	if Version == "dev" {
+		slog.Info("skipping update check in dev mode")
+		return
+	}
+
+	info, err := a.updater.CheckForUpdate()
+	if err != nil {
+		slog.Error("failed to check for updates", "error", err)
+		return
+	}
+
+	if info == nil {
+		slog.Info("no updates available")
+		return
+	}
+
+	slog.Info("update available", "version", info.Version, "url", info.URL)
+	runtime.EventsEmit(a.ctx, "update-available", info)
 }
 
 func (a *App) initWindow(ctx context.Context) error {
@@ -210,4 +251,44 @@ func getAppDataDir() (string, error) {
 	}
 
 	return appDataDir, nil
+}
+
+// GetVersion returns the current app version
+func (a *App) GetVersion() string {
+	return Version
+}
+
+// DownloadUpdate downloads the available update
+// Emits "update-progress" events with percentage (0-100)
+// Emits "update-ready" when download is complete
+func (a *App) DownloadUpdate(info *updater.UpdateInfo) error {
+	slog.Info("starting update download", "version", info.Version)
+
+	err := a.updater.DownloadUpdate(a.ctx, info, func(percent int) {
+		runtime.EventsEmit(a.ctx, "update-progress", percent)
+	})
+
+	if err != nil {
+		slog.Error("failed to download update", "error", err)
+		runtime.EventsEmit(a.ctx, "update-error", err.Error())
+		return err
+	}
+
+	slog.Info("update downloaded successfully")
+	runtime.EventsEmit(a.ctx, "update-ready", nil)
+	return nil
+}
+
+// ApplyUpdateAndRestart applies the downloaded update and restarts the app
+func (a *App) ApplyUpdateAndRestart() error {
+	slog.Info("applying update and restarting")
+
+	if err := a.updater.ApplyUpdate(); err != nil {
+		slog.Error("failed to apply update", "error", err)
+		return err
+	}
+
+	// Quit the app - the update script will relaunch it
+	runtime.Quit(a.ctx)
+	return nil
 }

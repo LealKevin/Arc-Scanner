@@ -7,6 +7,9 @@ RELEASE_DIR="releases/v$VERSION"
 echo "Creating release v$VERSION..."
 echo ""
 
+# Export version for build scripts
+export APP_VERSION="$VERSION"
+
 # Create release directory
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
@@ -45,8 +48,36 @@ echo ""
 echo "Files created in $RELEASE_DIR:"
 ls -lh "$RELEASE_DIR"
 echo ""
-echo "Next steps:"
-echo "  1. Create a GitHub release at: https://github.com/YOUR_USERNAME/arc-scanner/releases/new"
-echo "  2. Tag: v$VERSION"
-echo "  3. Upload the zip files from $RELEASE_DIR"
-echo "  4. Add release notes with install instructions"
+
+# Check if gh CLI is available
+if command -v gh &> /dev/null; then
+    echo "GitHub CLI detected. Would you like to create a release? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "Creating GitHub release v$VERSION..."
+        gh release create "v$VERSION" \
+            "$RELEASE_DIR/arc-scanner-macos-v$VERSION.zip" \
+            "$RELEASE_DIR/arc-scanner-windows-v$VERSION.zip" \
+            --title "v$VERSION" \
+            --notes "## Installation
+
+### macOS
+1. Download \`arc-scanner-macos-v$VERSION.zip\`
+2. Unzip and drag \`arc-scanner.app\` to Applications
+3. First launch: Right-click → Open → Click \"Open\"
+4. Grant Accessibility and Screen Recording permissions
+
+### Windows
+1. Download \`arc-scanner-windows-v$VERSION.zip\`
+2. Extract to a folder (keep folder structure)
+3. Run \`arc-scanner.exe\`
+4. If SmartScreen appears: Click \"More info\" → \"Run anyway\""
+        echo "Release created: https://github.com/Mizuba74/arc-scanner/releases/tag/v$VERSION"
+    fi
+else
+    echo "Next steps:"
+    echo "  1. Create a GitHub release at: https://github.com/Mizuba74/arc-scanner/releases/new"
+    echo "  2. Tag: v$VERSION"
+    echo "  3. Upload the zip files from $RELEASE_DIR"
+    echo "  4. Add release notes with install instructions"
+fi

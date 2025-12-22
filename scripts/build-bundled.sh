@@ -11,7 +11,12 @@ echo ""
 
 # Step 2: Build with Wails
 echo "Step 2/3: Building app with Wails..."
-wails build
+if [ -n "$APP_VERSION" ]; then
+    echo "  Embedding version: $APP_VERSION"
+    wails build -ldflags "-X main.Version=$APP_VERSION"
+else
+    wails build
+fi
 echo ""
 
 # Step 3: Copy bundled resources

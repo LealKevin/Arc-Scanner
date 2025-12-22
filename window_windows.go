@@ -74,3 +74,8 @@ func findWindowByTitle(title string) win.HWND {
 	)
 	return win.HWND(hwnd)
 }
+
+// Windows doesn't require special permissions like macOS
+func requestPermissions() {}
+
+func checkPermissions() int { return 0 }

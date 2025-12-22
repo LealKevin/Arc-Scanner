@@ -1,0 +1,89 @@
+.update-notification {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  border-radius: 6px;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  font-size: 11px;
+  color: #fff;
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.update-text {
+  color: #4caf50;
+  white-space: nowrap;
+}
+
+.update-text.error {
+  color: #f44336;
+}
+
+.update-btn {
+  padding: 3px 8px;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.update-btn:hover {
+  background-color: #45a049;
+}
+
+.dismiss-btn {
+  padding: 2px 6px;
+  background: transparent;
+  color: #888;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  transition: color 0.2s;
+}
+
+.dismiss-btn:hover {
+  color: #fff;
+}
+
+.progress-bar {
+  width: 60px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 0.2s ease-out;
+}
+
+.progress-text {
+  color: #888;
+  font-size: 10px;
+  min-width: 28px;
+  text-align: right;
+}

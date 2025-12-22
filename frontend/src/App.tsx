@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import "./App.css";
 import {
   EventsOn,
@@ -11,8 +11,9 @@ import { useTimeout } from "./hooks/useTimeout";
 import { ScanStatus } from "./components/ScanStatus";
 import { ItemCard } from "./components/ItemCard";
 import { ItemBadges } from "./components/ItemBadges";
+import { UpdateNotification } from "./components/UpdateNotification";
 
-const WINDOW_WIDTH_VISIBLE = 100;
+const WINDOW_WIDTH_VISIBLE = 200;
 const WINDOW_HEIGHT_VISIBLE = 220;
 const WINDOW_WIDTH_HIDDEN = 1;
 const WINDOW_HEIGHT_HIDDEN = 1;
@@ -23,6 +24,8 @@ function App() {
   const [isScanningFailed, setIsScanningFailed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [showItem, setShowItem] = useState(false);
+  const [hasUpdate, setHasUpdate] = useState(false);
+  const hasUpdateRef = useRef(false);
 
   const fadeTimeout = useTimeout();
   const clearTimeout = useTimeout();
@@ -61,7 +64,10 @@ function App() {
       fadeTimeout.set(() => {
         setShowItem(false);
         setItem(undefined);
-        updateWindowSize(false);
+        // Only shrink window if no update is pending
+        if (!hasUpdateRef.current) {
+          updateWindowSize(false);
+        }
       }, 1500);
     };
 
@@ -84,7 +90,10 @@ function App() {
       setIsScanningFailed(true);
       failedTimeout.set(() => {
         setIsScanningFailed(false);
-        updateWindowSize(false);
+        // Only shrink window if no update is pending
+        if (!hasUpdateRef.current) {
+          updateWindowSize(false);
+        }
       }, 2000);
     };
 
@@ -92,16 +101,24 @@ function App() {
       setIsVisible((prev) => !prev);
     };
 
+    const handleUpdateAvailable = () => {
+      setHasUpdate(true);
+      hasUpdateRef.current = true;
+      updateWindowSize(true); // Expand window to show notification
+    };
+
     const unsubItemFound = EventsOn("item-found", handleItemFound);
     const unsubScanStarted = EventsOn("scan-started", handleScanStarted);
     const unsubScanFailed = EventsOn("scan-failed", handleScanFailed);
     const unsubToggle = EventsOn("toggle-visibility", handleToggleVisibility);
+    const unsubUpdate = EventsOn("update-available", handleUpdateAvailable);
 
     return () => {
       unsubItemFound();
       unsubScanStarted();
       unsubScanFailed();
       unsubToggle();
+      unsubUpdate();
     };
   }, [updateWindowSize, fadeTimeout, clearTimeout, failedTimeout]);
 
@@ -116,6 +133,7 @@ function App() {
           </>
         )}
       </div>
+      <UpdateNotification />
     </div>
   );
 }
