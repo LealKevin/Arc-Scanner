@@ -42,11 +42,6 @@ Download the latest release for your platform:
 
 ## Usage
 
-| Key | Action |
-|-----|--------|
-| `Y` | Scan item under cursor |
-| `U` | Toggle overlay visibility |
-
 1. Launch Arc Scanner — a small indicator appears in the top-right corner
 2. In game, hover your mouse over an item
 3. Press `Y` to scan
