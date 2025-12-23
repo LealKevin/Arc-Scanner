@@ -20,6 +20,9 @@
 
 <!-- TODO: Add demo.gif showing: hover item → press Y → overlay appears → fades -->
 
+> [!WARNING]
+> This project is in early development. You may encounter bugs or inaccurate item data.
+
 ## What is Arc Scanner?
 
 Arc Scanner is a desktop overlay for Arc Raiders that identifies items using OCR and instantly displays their value. Just hover over any item in-game and press a key to scan.
