@@ -12,7 +12,7 @@ import (
 
 var (
 	user32                         = syscall.NewLazyDLL("user32.dll")
-	dwmapi                         = syscall.NewLazyDLL("dwmapi.dll")
+	dwmapi                         = syscall.NewLazyDLL("dwmapi.dll") // Lazy load - only loads when proc is called
 	procFindWindowW                = user32.NewProc("FindWindowW")
 	procSetWindowPos               = user32.NewProc("SetWindowPos")
 	procGetSystemMetrics           = user32.NewProc("GetSystemMetrics")
