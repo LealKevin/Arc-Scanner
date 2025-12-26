@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	user32               = syscall.NewLazyDLL("user32.dll")
-	procFindWindowW      = user32.NewProc("FindWindowW")
-	procSetWindowPos     = user32.NewProc("SetWindowPos")
-	procGetSystemMetrics = user32.NewProc("GetSystemMetrics")
-	procGetDpiForWindow  = user32.NewProc("GetDpiForWindow")
+	user32                         = syscall.NewLazyDLL("user32.dll")
+	dwmapi                         = syscall.NewLazyDLL("dwmapi.dll") // Lazy load - only loads when proc is called
+	procFindWindowW                = user32.NewProc("FindWindowW")
+	procSetWindowPos               = user32.NewProc("SetWindowPos")
+	procGetSystemMetrics           = user32.NewProc("GetSystemMetrics")
+	procGetDpiForWindow            = user32.NewProc("GetDpiForWindow")
+	procDwmExtendFrameIntoClientArea = dwmapi.NewProc("DwmExtendFrameIntoClientArea")
 )
 
 const (
@@ -26,6 +28,14 @@ const (
 	SM_CXSCREEN    = 0
 )
 
+// MARGINS structure for DwmExtendFrameIntoClientArea
+type MARGINS struct {
+	cxLeftWidth    int32
+	cxRightWidth   int32
+	cyTopHeight    int32
+	cyBottomHeight int32
+}
+
 func setWindowAboveFullscreen() {
 	hwnd := findWindowByTitle("arc-scanner")
 	if hwnd == 0 {
@@ -33,9 +43,19 @@ func setWindowAboveFullscreen() {
 		return
 	}
 
-	// Enable layered window for true transparency (per Wails Issue #1296)
-	win.SetWindowLong(hwnd, win.GWL_EXSTYLE,
-		win.GetWindowLong(hwnd, win.GWL_EXSTYLE)|win.WS_EX_LAYERED)
+	// Use DWM composition for transparency (fixes Windows 11 black background issue)
+	// Set margins to -1 to extend the frame into the entire client area
+	margins := MARGINS{-1, -1, -1, -1}
+	dwmRet, _, _ := procDwmExtendFrameIntoClientArea.Call(
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(&margins)),
+	)
+	if dwmRet != 0 {
+		// If DWM fails (older Windows or DWM disabled), fall back to layered window
+		fmt.Printf("DwmExtendFrameIntoClientArea failed with HRESULT 0x%X, falling back to WS_EX_LAYERED\n", dwmRet)
+		win.SetWindowLong(hwnd, win.GWL_EXSTYLE,
+			win.GetWindowLong(hwnd, win.GWL_EXSTYLE)|win.WS_EX_LAYERED)
+	}
 
 	screenWidth, _, _ := procGetSystemMetrics.Call(uintptr(SM_CXSCREEN))
 
