@@ -137,6 +137,8 @@ Screenshot preprocessing is critical for accuracy (see `ocr/scanner.go:44-47`).
 
 - `window_darwin.go`: macOS window management with Cocoa (build tag: `//go:build darwin`)
 - `window_windows.go`: Windows window management with Windows API (build tag: `//go:build windows`)
+  - Uses `DwmExtendFrameIntoClientArea` for transparency (fixes Windows 11 black background issue)
+  - Falls back to `WS_EX_LAYERED` for older Windows or when DWM is disabled
 - `window_other.go`: Stub for unsupported platforms (build tag: `//go:build !darwin`)
 - `app.go`: Platform-agnostic app data paths (detects Windows vs macOS at runtime)
 - `ocr/scanner.go`: Platform-specific Tesseract path detection (detects Windows vs macOS paths)
