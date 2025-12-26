@@ -46,13 +46,13 @@ func setWindowAboveFullscreen() {
 	// Use DWM composition for transparency (fixes Windows 11 black background issue)
 	// Set margins to -1 to extend the frame into the entire client area
 	margins := MARGINS{-1, -1, -1, -1}
-	dwmRet, _, dwmErr := procDwmExtendFrameIntoClientArea.Call(
+	dwmRet, _, _ := procDwmExtendFrameIntoClientArea.Call(
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(&margins)),
 	)
 	if dwmRet != 0 {
 		// If DWM fails (older Windows or DWM disabled), fall back to layered window
-		fmt.Printf("DwmExtendFrameIntoClientArea failed (code %d), falling back to WS_EX_LAYERED: %v\n", dwmRet, dwmErr)
+		fmt.Printf("DwmExtendFrameIntoClientArea failed with HRESULT 0x%X, falling back to WS_EX_LAYERED\n", dwmRet)
 		win.SetWindowLong(hwnd, win.GWL_EXSTYLE,
 			win.GetWindowLong(hwnd, win.GWL_EXSTYLE)|win.WS_EX_LAYERED)
 	}
